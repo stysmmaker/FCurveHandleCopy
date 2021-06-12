@@ -1,5 +1,3 @@
 .vscode
 *.code-workspace
-.vimrc
-*.swp
 __pycache__

@@ -85,24 +85,22 @@ class FCurveHandleCopyValue(bpy.types.Operator):
 			G.selected_keys = []
 
 			if (len(fcurves) > 1):
-				self.report({"WARNING"}, "Only select one curve when copying an ease!")
+				self.report({"WARNING"}, "Please only select one curve when copying an ease.")
 				return {'CANCELLED'}
 			
 			for keyframe in fcurves[0].keyframe_points:
 				if (len(G.selected_keys) > 2):
-					self.report({"WARNING"}, "Please select exactly two keyframes when copying an ease!")
+					self.report({"WARNING"}, "Please select exactly two keyframes when copying an ease.")
 					return {'CANCELLED'}
 				
 				if (keyframe.select_control_point):
 					G.selected_keys.append(keyframe)
 		
 		if (len(G.selected_keys) != 2):
-			self.report({"WARNING"}, "Please select exactly two keyframes when copying an ease!")
+			self.report({"WARNING"}, "Please select exactly two keyframes when copying an ease.")
 			return {'CANCELLED'}
 		
 		G.bezier = convert_handles_to_bezier(G.selected_keys)
-
-		print("Done")
 
 		return {'FINISHED'}
 
@@ -117,12 +115,26 @@ class FCurveHandlePasteValue(bpy.types.Operator):
 
 			for fcurve in fcurves:
 				keys = fcurve.keyframe_points
-				for i in range(0, len(keys) - 1):
-					new_handles = generate_new_handles(keys[i], keys[i + 1])
-					keys[i].handle_right_type = 'FREE'
-					keys[i + 1].handle_left_type = 'FREE'
-					keys[i].handle_right    = new_handles[0]
-					keys[i + 1].handle_left = new_handles[1]
+				selected_keys = []
+				for i in range(0, len(keys)):
+					if (keys[i].select_control_point):
+						selected_keys.append(i)
+
+				if (len(selected_keys) == 0):
+					self.report({"WARNING"}, "Please select some keyframes to paste an ease to.")
+					return {'CANCELLED'}
+				if (len(selected_keys) == 1):
+					# TODO: Implement logic for this soon
+					pass
+				else:
+					selected_keys.pop() # TODO: Related to above, implement soon
+					for i in selected_keys:
+						if (i < len(keys) - 1):
+							new_handles = generate_new_handles(keys[i], keys[i + 1])
+							keys[i].handle_right_type = 'FREE'
+							keys[i + 1].handle_left_type = 'FREE'
+							keys[i].handle_right    = new_handles[0]
+							keys[i + 1].handle_left = new_handles[1]
 
 		return {'FINISHED'}
 
