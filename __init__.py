@@ -18,21 +18,11 @@
 bl_info = {
 	"name" : "FCurveHandleCopy",
 	"author" : "MMaker",
-	"description" : "",
+	"description" : ":)",
 	"blender" : (2, 83, 0),
 	"version" : (0, 0, 1),
-	"location" : "",
-	"warning" : "",
 	"category" : "Animation"
 }
-
-"""
-if "bpy" in locals():
-	import importlib
-	importlib.reload(ui)
-else:
-	from . import ui
-"""
 
 import bpy
 import mathutils
