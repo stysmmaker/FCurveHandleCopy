@@ -131,6 +131,8 @@ class FCurveHandlePasteValue(bpy.types.Operator):
 					for i in selected_keys:
 						if (i < len(keys) - 1):
 							new_handles = generate_new_handles(keys[i], keys[i + 1])
+							keys[i].interpolation = 'BEZIER'
+							keys[i].interpolation = 'BEZIER'
 							keys[i].handle_right_type = 'FREE'
 							keys[i + 1].handle_left_type = 'FREE'
 							keys[i].handle_right    = new_handles[0]
