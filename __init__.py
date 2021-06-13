@@ -28,7 +28,8 @@ import bpy
 import mathutils
 
 class G:
-	pass
+	selected_keys = []
+	bezier = []
 
 def convert_handles_to_bezier(keyframes):
 	bezier = []
