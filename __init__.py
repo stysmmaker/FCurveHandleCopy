@@ -75,12 +75,14 @@ class FCurveHandleCopyValue(bpy.types.Operator):
         if (context.selected_visible_fcurves):
             fcurves = context.selected_visible_fcurves
             G.selected_keys = []
-
-            if (len(fcurves) > 1):
-                self.report({"WARNING"}, "Please only select one curve when copying an ease.")
-                return {'CANCELLED'}
             
-            G.selected_keys = list(filter(lambda x: x.select_control_point, fcurves[0].keyframe_points))
+            for fcurve in fcurves:
+                for key in fcurve.keyframe_points:
+                    if key.select_control_point:
+                        G.selected_keys.append(key)
+                        if (len(G.selected_keys) > 2):
+                            self.report({"WARNING"}, "Please select exactly two keyframes when copying an ease.")
+                            return {'CANCELLED'}
         
         if (len(G.selected_keys) != 2):
             self.report({"WARNING"}, "Please select exactly two keyframes when copying an ease.")
@@ -99,30 +101,35 @@ class FCurveHandlePasteValue(bpy.types.Operator):
         if (context.selected_visible_fcurves):
             fcurves = context.selected_visible_fcurves
 
+            selected_keys = {}
+
             for fcurve in fcurves:
                 keys = fcurve.keyframe_points
-                selected_keys = []
                 for i in range(0, len(keys)):
                     if (keys[i].select_control_point):
-                        selected_keys.append(i)
+                        if fcurve not in selected_keys:
+                            selected_keys[fcurve] = []
+                        selected_keys[fcurve].append(keys[i])
 
-                if (len(selected_keys) == 0):
+            for fcurve, keys in selected_keys.items():
+                if (len(keys) == 0):
                     self.report({"WARNING"}, "Please select some keyframes to paste an ease to.")
                     return {'CANCELLED'}
-                if (len(selected_keys) == 1):
+                if (len(keys) == 1):
                     # TODO: Implement logic for this soon
                     pass
                 else:
-                    selected_keys.pop() # TODO: Related to above, implement soon
-                    for i in selected_keys:
-                        if (i < len(keys) - 1):
-                            new_handles = generate_new_handles(keys[i], keys[i + 1])
-                            keys[i].interpolation = 'BEZIER'
-                            keys[i + 1].interpolation = 'BEZIER'
-                            keys[i].handle_right_type = 'FREE'
-                            keys[i + 1].handle_left_type = 'FREE'
-                            keys[i].handle_right    = new_handles[0]
-                            keys[i + 1].handle_left = new_handles[1]
+                    keys.pop() # TODO: Related to above, implement soon
+                    for i, _ in enumerate(keys):
+                        f_keys = fcurve.keyframe_points
+                        if (i < len(f_keys) - 1):
+                            new_handles = generate_new_handles(f_keys[i], f_keys[i + 1])
+                            f_keys[i].interpolation = 'BEZIER'
+                            f_keys[i + 1].interpolation = 'BEZIER'
+                            f_keys[i].handle_right_type = 'FREE'
+                            f_keys[i + 1].handle_left_type = 'FREE'
+                            f_keys[i].handle_right    = new_handles[0]
+                            f_keys[i + 1].handle_left = new_handles[1]
 
         return {'FINISHED'}
 
