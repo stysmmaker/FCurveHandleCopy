@@ -109,7 +109,7 @@ class FCurveHandlePasteValue(bpy.types.Operator):
                     if (keys[i].select_control_point):
                         if fcurve not in selected_keys:
                             selected_keys[fcurve] = []
-                        selected_keys[fcurve].append(keys[i])
+                        selected_keys[fcurve].append(i)
 
             for fcurve, keys in selected_keys.items():
                 if (len(keys) == 0):
@@ -120,7 +120,7 @@ class FCurveHandlePasteValue(bpy.types.Operator):
                     pass
                 else:
                     keys.pop() # TODO: Related to above, implement soon
-                    for i, _ in enumerate(keys):
+                    for i in keys:
                         f_keys = fcurve.keyframe_points
                         if (i < len(f_keys) - 1):
                             new_handles = generate_new_handles(f_keys[i], f_keys[i + 1])
