@@ -1,4 +1,4 @@
-# Copyright (C) 2021 MMaker <mmaker@mmaker.moe>
+# Copyright (C) 2021-2022 MMaker <mmaker@mmaker.moe>
 # 
 # This file is part of FCurveHandleCopy.
 # 
@@ -20,7 +20,7 @@ bl_info = {
     "author" : "MMaker",
     "description" : ":)",
     "blender" : (2, 83, 0),
-    "version" : (0, 0, 1),
+    "version" : (0, 0, 2),
     "category" : "Animation"
 }
 
