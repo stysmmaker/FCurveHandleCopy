@@ -133,7 +133,11 @@ class FCurveHandleCopyValue(bpy.types.Operator):
                             G.selected_keys[fcurve] = []
                         G.selected_keys[fcurve].append(key_index)
         
-        G.bezier = convert_handles_to_bezier(G.selected_keys)
+        if G.bezier:
+            G.bezier = convert_handles_to_bezier(G.selected_keys)
+        else:
+            self.report({"WARNING"}, "Please select some keyframes to copy an ease from.")
+            return {'CANCELLED'}
 
         return {'FINISHED'}
 
