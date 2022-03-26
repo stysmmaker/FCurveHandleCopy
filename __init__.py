@@ -34,18 +34,68 @@ class G:
 
 def inverse_lerp(minimum, maximum, val):
     return (val - minimum) / (maximum - minimum)
-        
+    
+def create_bezier(handles, co_left_side, co_right_side):
+        return list(
+            map(
+                lambda x: list(map(
+                    lambda v, dimension: inverse_lerp(co_left_side[dimension], co_right_side[dimension], v),
+                    x,
+                    range(2)
+                )),
+                handles
+            )
+        )
+   
 def convert_handles_to_bezier(keyframes):
-    handles = [keyframes[0].handle_right, keyframes[1].handle_left]
+    # TODO(mmaker): Some of the logic here, particularly when selecting one key,
+    # is likely not the correct way to calculate the bezier.
+    # Should do a second pass over this and see if it could be cleaned up to be more accurate.
+    # (I'm not very math pilled, sorry)
+    # 
+    # This at minimum should handle any types of user selections though.
+    # (Two keys, a single key, several keys across different fcurves)
+    
+    beziers = []
+    for fcurve, key_indexes in keyframes.items():
+        f_keys = fcurve.keyframe_points
+        
+        # Case when only one key is selected
+        # TODO(mmaker): Clean up this logic
+        if len(key_indexes) == 1:
+            key = f_keys[key_indexes[0]]
+            beziers.append(create_bezier([
+                key.handle_left, key.handle_right
+            ], key.co, [0.0, 0.0]))
+        
+        for i in key_indexes[:-1]:
+            # NOTE(mmaker): This naming could probably be better, lol
+            handle_left_side = f_keys[i].handle_right
+            co_left_side = f_keys[i].co
+            if i >= len(f_keys):
+                # Case when selected key is the last in the fcurve
+                handle_right_side = [0.0, 0.0]
+                co_right_side = f_keys[i].co
+            else:
+                handle_right_side = f_keys[i + 1].handle_left
+                co_right_side = f_keys[i + 1].co
+                
+            handles = [handle_left_side, handle_right_side]
+            beziers.append(create_bezier(handles, co_left_side, co_right_side))
+            
+    # Average beziers
+    # NOTE(mmaker): I'm sure there is a way to vectorize this, but until then, B)
+    bezier = [
+        [
+            sum([x[0] for x in list(zip(*beziers))[0]]) / len(beziers),
+            sum([x[1] for x in list(zip(*beziers))[0]]) / len(beziers)
+        ],
+        [
+            sum([x[0] for x in list(zip(*beziers))[1]]) / len(beziers),
+            sum([x[1] for x in list(zip(*beziers))[1]]) / len(beziers)
+        ]
+    ]
 
-    bezier = list(map(
-        lambda x: list(map(
-            lambda v, dimension: inverse_lerp(keyframes[0].co[dimension], keyframes[1].co[dimension], v),
-            x,
-            range(2)
-        )),
-        handles
-    ))
     return bezier
 
 def generate_new_handles(in_key, out_key):
@@ -74,19 +124,14 @@ class FCurveHandleCopyValue(bpy.types.Operator):
     def execute(self, context):
         if (context.selected_visible_fcurves):
             fcurves = context.selected_visible_fcurves
-            G.selected_keys = []
+            G.selected_keys = {}
             
             for fcurve in fcurves:
-                for key in fcurve.keyframe_points:
+                for key_index, key in enumerate(fcurve.keyframe_points):
                     if key.select_control_point:
-                        G.selected_keys.append(key)
-                        if (len(G.selected_keys) > 2):
-                            self.report({"WARNING"}, "Please select exactly two keyframes when copying an ease.")
-                            return {'CANCELLED'}
-        
-        if (len(G.selected_keys) != 2):
-            self.report({"WARNING"}, "Please select exactly two keyframes when copying an ease.")
-            return {'CANCELLED'}
+                        if fcurve not in G.selected_keys:
+                            G.selected_keys[fcurve] = []
+                        G.selected_keys[fcurve].append(key_index)
         
         G.bezier = convert_handles_to_bezier(G.selected_keys)
 
@@ -104,23 +149,23 @@ class FCurveHandlePasteValue(bpy.types.Operator):
             selected_keys = {}
 
             for fcurve in fcurves:
-                keys = fcurve.keyframe_points
-                for i in range(0, len(keys)):
-                    if (keys[i].select_control_point):
+                f_keys = fcurve.keyframe_points
+                for i in range(0, len(f_keys)):
+                    if (f_keys[i].select_control_point):
                         if fcurve not in selected_keys:
                             selected_keys[fcurve] = []
                         selected_keys[fcurve].append(i)
 
-            for fcurve, keys in selected_keys.items():
-                if (len(keys) == 0):
+            for fcurve, key_indexes in selected_keys.items():
+                if (len(key_indexes) == 0):
                     self.report({"WARNING"}, "Please select some keyframes to paste an ease to.")
                     return {'CANCELLED'}
-                if (len(keys) == 1):
+                if (len(key_indexes) == 1):
                     # TODO: Implement logic for this soon
                     pass
                 else:
-                    keys.pop() # TODO: Related to above, implement soon
-                    for i in keys:
+                    key_indexes.pop() # TODO: Related to above, implement soon
+                    for i in key_indexes:
                         f_keys = fcurve.keyframe_points
                         if (i < len(f_keys) - 1):
                             new_handles = generate_new_handles(f_keys[i], f_keys[i + 1])
