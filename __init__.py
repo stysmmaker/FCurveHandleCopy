@@ -26,7 +26,7 @@ bl_info = {
 
 import bpy
 import mathutils
-import bl_math
+import bl_math # type: ignore
 
 class G:
     selected_keys = []
